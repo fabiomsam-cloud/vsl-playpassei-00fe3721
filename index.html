@@ -69,6 +69,44 @@
       body { padding-top: 14px; }
     }
   </style>
+
+  <script>
+  /* Repassa os parâmetros do anúncio (utm_*, fbclid, gclid) para o link do botão do Vturb.
+     O player só injeta o próprio "vtid"; sem isto a venda chega na Hubla sem origem. */
+  (function () {
+    var KEYS = /^(utm_[a-z]+|fbclid|gclid|ttclid|src|sck)$/i;
+    var params = {};
+    try {
+      var cur = new URLSearchParams(location.search);
+      cur.forEach(function (v, k) { if (KEYS.test(k)) params[k] = v; });
+      var saved = sessionStorage.getItem("pp_params");
+      if (Object.keys(params).length) sessionStorage.setItem("pp_params", JSON.stringify(params));
+      else if (saved) params = JSON.parse(saved);
+    } catch (e) {}
+    function isCheckout(u) { return /(^|\.)(hub\.la|hubla\.com|hubla\.com\.br)$/i.test(u.hostname); }
+    function withParams(href) {
+      try {
+        var u = new URL(href, location.href);
+        if (!isCheckout(u)) return href;
+        Object.keys(params).forEach(function (k) { if (!u.searchParams.has(k)) u.searchParams.set(k, params[k]); });
+        return u.toString();
+      } catch (e) { return href; }
+    }
+    if (!Object.keys(params).length) return;
+    document.addEventListener("click", function (ev) {
+      var path = ev.composedPath ? ev.composedPath() : [ev.target];
+      for (var i = 0; i < path.length; i++) {
+        var el = path[i];
+        if (el && el.tagName === "A" && el.href) { el.href = withParams(el.href); break; }
+      }
+    }, true);
+    var open = window.open;
+    window.open = function (url) {
+      if (typeof url === "string") arguments[0] = withParams(url);
+      return open.apply(window, arguments);
+    };
+  })();
+  </script>
 </head>
 <body>
   <main class="video-wrapper">
