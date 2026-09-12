@@ -78,7 +78,13 @@
     var params = {};
     try {
       var cur = new URLSearchParams(location.search);
-      cur.forEach(function (v, k) { if (KEYS.test(k)) params[k] = v; });
+      var raw = false;
+      cur.forEach(function (v, k) {
+        if (!KEYS.test(k)) return;
+        if (/\{\{|\}\}|^undefined$/.test(v)) { raw = true; return; } /* macro da Meta não substituída */
+        params[k] = v;
+      });
+      if (raw) { params.utm_source = params.utm_source || "FB"; params.utm_medium = "meta_sem_macro"; }
       var saved = sessionStorage.getItem("pp_params");
       if (Object.keys(params).length) sessionStorage.setItem("pp_params", JSON.stringify(params));
       else if (saved) params = JSON.parse(saved);
