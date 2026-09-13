@@ -90,10 +90,15 @@
       else if (saved) params = JSON.parse(saved);
     } catch (e) {}
     function isCheckout(u) { return /(^|\.)(hub\.la|hubla\.com|hubla\.com\.br)$/i.test(u.hostname); }
+    /* O link curto da Hubla (hub.la/r/...) redireciona e SUBSTITUI os utm_* pelos fixos do link.
+       Para a origem do anúncio chegar na fatura, vamos direto ao checkout. */
+    var DIRETO = { "playpassei_ass2_plataforma": "https://pay.hub.la/LX1IAQgx4ZXNArYQmCVl" };
     function withParams(href) {
       try {
         var u = new URL(href, location.href);
         if (!isCheckout(u)) return href;
+        var m = u.pathname.match(/^\/r\/([^\/?#]+)/);
+        if (m && DIRETO[m[1]]) { var d = new URL(DIRETO[m[1]]); u.searchParams.forEach(function (v, k) { d.searchParams.set(k, v); }); u = d; }
         Object.keys(params).forEach(function (k) { if (!u.searchParams.has(k)) u.searchParams.set(k, params[k]); });
         return u.toString();
       } catch (e) { return href; }
